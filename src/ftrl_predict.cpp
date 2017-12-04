@@ -22,6 +22,7 @@
 #include <cstdlib>
 #include <utility>
 #include <vector>
+#include <tuple>
 #include "src/file_parser.h"
 #include "src/ftrl_solver.h"
 #include "src/util.h"
@@ -32,11 +33,11 @@ void print_usage(int argc, char* argv[]) {
   printf("\tYou can read test sample from stdin by set '-t stdin'\n");
 }
 
-double calc_auc(const std::vector<std::pair<double, unsigned> >& scores) {
+double calc_auc(const std::vector<std::tuple<double, unsigned, double> >& scores) {
   size_t num_pos = 0;
   size_t num_neg = 0;
   for (size_t i = 0; i < scores.size(); ++i) {
-    if (scores[i].second == 1) {
+    if (std::get<1>(scores[i]) == 1) {
       ++num_pos;
     } else {
       ++num_neg;
@@ -54,13 +55,13 @@ double calc_auc(const std::vector<std::pair<double, unsigned> >& scores) {
 
   double auc = 0.;
   for (size_t i = 0; i < scores.size(); ++i) {
-    if (scores[i].second == 1) {
+    if (std::get<1>(scores[i]) == 1) {
       ++tp;
     } else {
       ++fp;
     }
 
-    if (i != 0 && scores[i].first != scores[i - 1].first) {
+    if (i != 0 && std::get<0>(scores[i]) != std::get<0>(scores[i - 1])) {
       auc += prev_tpr * (static_cast<double>(fp) / num_neg - prev_fpr);
       prev_tpr = static_cast<double>(tp) / num_pos;
       prev_fpr = static_cast<double>(fp) / num_neg;
@@ -76,7 +77,6 @@ int main(int argc, char* argv[]) {
   std::string test_file;
   std::string model_file;
   std::string output_file;
-
   while ((ch = getopt(argc, argv, "t:m:o:h")) != -1) {
     switch (ch) {
     case 't':
@@ -111,33 +111,35 @@ int main(int argc, char* argv[]) {
   FileParser<double> parser;
   parser.OpenFile(test_file.c_str());
 
-  std::vector<std::pair<double, unsigned>> pred_scores;
+  std::vector<std::tuple<double, unsigned, double>> pred_scores;
 
   while (1) {
     bool res = parser.ReadSample(y, x);
     if (!res) break;
 
-    double pred = model.Predict(x);
-    pred = std::max(std::min(pred, 1. - 10e-15), 10e-15);
-    fprintf(wfp, "%u\t%lf\n", static_cast<unsigned>(y), pred);
+    auto pred = model.PredictWithConfidence(x);
+    double pred_prob = std::get<0>(pred);
+    double pred_cfd = std::get<1>(pred);
+    pred_prob = std::max(std::min(pred_prob, 1. - 10e-15), 10e-15);
+    fprintf(wfp, "%u\t%lf\t%lf\n", static_cast<unsigned>(y), pred_prob, pred_cfd);
 
     pred_scores.emplace_back(
-      std::make_pair(pred, static_cast<unsigned>(y)));
+      std::make_tuple(pred_prob, static_cast<unsigned>(y), pred_cfd));
 
     ++cnt;
     double pred_label = 0;
-    if (pred > 0.5) pred_label = 1;
+    if (pred_prob > 0.5) pred_label = 1;
     if (util_equal(pred_label, y)) ++correct;
 
-    pred = std::max(std::min(pred, 1. - 10e-15), 10e-15);
-    loss += y > 0 ? -log(pred) : -log(1. - pred);
+    pred_prob = std::max(std::min(pred_prob, 1. - 10e-15), 10e-15);
+    loss += y > 0 ? -log(pred_prob) : -log(1. - pred_prob);
   }
 
   std::sort(
     pred_scores.begin(),
     pred_scores.end(),
-    [] (const std::pair<double, unsigned>& l, const std::pair<double, unsigned>& r) {
-      return l.first > r.first;
+    [] (const std::tuple<double, unsigned, double>& l, const std::tuple<double, unsigned, double>& r) {
+      return std::get<0>(l) > std::get<0>(r);
     }
   );
   double auc = calc_auc(pred_scores);

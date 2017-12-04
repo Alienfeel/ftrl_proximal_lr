@@ -31,6 +31,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <tuple>
 #include <unordered_map>
 #include "src/util.h"
 
@@ -58,6 +59,8 @@ public:
 
   virtual T Update(const std::vector<std::pair<size_t, T> >& x, T y);
   virtual T Predict(const std::vector<std::pair<size_t, T> >& x);
+  // with confidence
+  virtual std::tuple<T, double> PredictWithConfidence(const std::vector<std::pair<size_t, T>>& x);
 
   virtual bool SaveModelAll(const char* path);
   virtual bool SaveModel(const char* path);
@@ -256,16 +259,27 @@ T FtrlSolver<T>::Update(const std::vector<std::pair<size_t, T> >& x, T y) {
 template<typename T>
 T FtrlSolver<T>::Predict(const std::vector<std::pair<size_t, T> >& x) {
   if (!init_) return 0;
+  auto pred = PredictWithConfidence(x);
+  return std::get<0>(pred);
+}
+
+template<typename T>
+std::tuple<T, double> FtrlSolver<T>::PredictWithConfidence(const std::vector<std::pair<size_t, T> >& x) {
+  if (!init_) return std::make_tuple<T,double>(0, 0.);
 
   T wTx = 0.;
+  double confidence = 0;
   for (auto& item : x) {
     size_t idx = item.first;
     T val = GetWeight(idx);
-    wTx += val * item.second;
+    T wx = val * item.second;
+    wTx += wx;
+    confidence += std::fabs(wx);
   }
 
   T pred = sigmoid(wTx);
-  return pred;
+  double cfd = 2 * sigmoid(confidence) - 1.0;
+  return std::make_tuple(pred, cfd);
 }
 
 template<typename T>
@@ -340,6 +354,7 @@ public:
   bool Initialize(const char* path);
 
   T Predict(const std::vector<std::pair<size_t, T> >& x);
+  std::tuple<T, double> PredictWithConfidence(const std::vector<std::pair<size_t, T> >& x);
 private:
   T GetW(size_t idx) const {
     auto cit = model_.find(idx);
@@ -380,16 +395,27 @@ bool LRModel<T>::Initialize(const char* path) {
 
 template<typename T>
 T LRModel<T>::Predict(const std::vector<std::pair<size_t, T> >& x) {
-  if (!init_) return 0;
+  auto pred = PredictWithConfidence(x);
+  return std::get<0>(pred);
+}
+
+template<typename T>
+std::tuple<T, double>  LRModel<T>::PredictWithConfidence(const std::vector<std::pair<size_t, T>>& x) {
+  if (!init_) return std::make_tuple(T(0),double(0.));;
 
   T wTx = 0.;
+  double confidence = 0.; 
   for (auto& item : x) {
     auto w = GetW(item.first);
-    wTx += w * item.second;
+    auto wx = w * item.second;
+    wTx += wx;
+    confidence += std::fabs(wx); 
   }
   T pred = sigmoid(wTx);
-  return pred;
+  double pcfd = 2 * sigmoid(confidence) - 1.0;
+  return std::make_tuple(pred, pcfd);
 }
+
 
 #endif // SRC_FTRL_SOLVER_H
 /* vim: set ts=4 sw=4 tw=0 noet :*/

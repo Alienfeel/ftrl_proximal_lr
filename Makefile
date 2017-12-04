@@ -1,6 +1,6 @@
 
 CC = g++
-CPPFLAGS = -Wall -O3 -fPIC -std=c++14 -march=native
+CPPFLAGS = -Wall -O3 -fPIC -std=c++11 -march=native
 INCLUDES = -I.
 LDFLAGS = -pthread
 
