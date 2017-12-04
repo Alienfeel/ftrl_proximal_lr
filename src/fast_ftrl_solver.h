@@ -22,6 +22,7 @@
 #define SRC_FAST_FTRL_SOLVER_H
 
 #include <algorithm>
+#include <limits>
 #include <functional>
 #include <utility>
 #include <vector>
@@ -166,9 +167,9 @@ bool FtrlParamServer<T>::FetchParamGroup(ParamMap& n, ParamMap& z, size_t group)
   // may be bug here, the precision thresh is too high
   for (size_t i = start; i < end; ++i) {
     auto w = FtrlSolver<T>::GetN(i);
-    if (w >= 1e-6) n[i] = w;
+    if (w > std::numeric_limits<T>::epsilon()) n[i] = w;
     w = FtrlSolver<T>::GetZ(i);
-    if (w >= 1e-6) z[i] = w;
+    if (w > std::numeric_limits<T>::epsilon()) z[i] = w;
   }
 
   return true;
@@ -195,10 +196,10 @@ bool FtrlParamServer<T>::PushParamGroup(ParamMap& n, ParamMap& z, size_t group) 
   // 2. TODO
   std::lock_guard<SpinLock> lock(lock_slots_[group]);
   for (auto& kv : n) {
-          if (kv.first >= start && kv.first < end) {
-                  FtrlSolver<T>::n_[kv.first] += kv.second;
-                  kv.second = 0;
-          }
+    if (kv.first >= start && kv.first < end) {
+      FtrlSolver<T>::n_[kv.first] += kv.second;
+      kv.second = 0;
+    }
   }
   for (auto& kv : z) {
     if (kv.first >= start && kv.first < end) {

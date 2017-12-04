@@ -104,14 +104,14 @@ int main(int argc, char* argv[]) {
   model.Initialize(model_file.c_str());
 
   double y = 0.;
-  std::vector<std::pair<size_t, double> > x;
+  std::vector<std::pair<size_t, double>> x;
   FILE* wfp = fopen(output_file.c_str(), "w");
   size_t cnt = 0, correct = 0;
   double loss = 0.;
   FileParser<double> parser;
   parser.OpenFile(test_file.c_str());
 
-  std::vector<std::pair<double, unsigned> > pred_scores;
+  std::vector<std::pair<double, unsigned>> pred_scores;
 
   while (1) {
     bool res = parser.ReadSample(y, x);
@@ -121,8 +121,8 @@ int main(int argc, char* argv[]) {
     pred = std::max(std::min(pred, 1. - 10e-15), 10e-15);
     fprintf(wfp, "%u\t%lf\n", static_cast<unsigned>(y), pred);
 
-    pred_scores.push_back(std::move(
-      std::make_pair(pred, static_cast<unsigned>(y))));
+    pred_scores.emplace_back(
+      std::make_pair(pred, static_cast<unsigned>(y)));
 
     ++cnt;
     double pred_label = 0;
