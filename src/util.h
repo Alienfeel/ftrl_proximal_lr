@@ -35,84 +35,84 @@
 
 template<class Func>
 void util_parallel_run(const Func& func, size_t num_threads = 0) {
-	if (num_threads == 0) {
-		num_threads = std::thread::hardware_concurrency();
-	}
+  if (num_threads == 0) {
+    num_threads = std::thread::hardware_concurrency();
+  }
 
-	std::thread *threads = new std::thread[num_threads];
-	for (size_t i = 0; i < num_threads; ++i) {
-		threads[i] = std::thread(func, i);
-	}
+  std::thread *threads = new std::thread[num_threads];
+  for (size_t i = 0; i < num_threads; ++i) {
+    threads[i] = std::thread(func, i);
+  }
 
-	for (size_t i = 0; i < num_threads; ++i) {
-		threads[i].join();
-	}
+  for (size_t i = 0; i < num_threads; ++i) {
+    threads[i].join();
+  }
 
-	delete [] threads;
+  delete [] threads;
 }
 
 template<typename T>
 inline bool util_equal(const T v1, const T v2) {
-	return std::fabs(v1 - v2) < std::numeric_limits<T>::epsilon();
+  return std::fabs(v1 - v2) < std::numeric_limits<T>::epsilon();
 }
 
 template<typename T>
 inline bool util_greater(const T v1, const T v2) {
-	if (util_equal(v1, v2)) {
-		return false;
-	}
+  if (util_equal(v1, v2)) {
+    return false;
+  }
 
-	return v1 > v2;
+  return v1 > v2;
 }
 
 template<typename T>
 inline int util_cmp(const T v1, const T v2) {
-	if (util_equal(v1, v2)) {
-		return 0;
-	} else if (v1 > v2) {
-		return 1;
-	} else {
-		return -1;
-	}
+  if (util_equal(v1, v2)) {
+    return 0;
+  } else if (v1 > v2) {
+    return 1;
+  } else {
+    return -1;
+  }
 }
 
 template<typename T>
 inline bool util_greater_equal(const T v1, const T v2) {
-	if (util_equal(v1, v2)) {
-		return true;
-	}
+  if (util_equal(v1, v2)) {
+    return true;
+  }
 
-	return v1 > v2;
+  return v1 > v2;
 }
 
 template<typename T>
 inline bool util_less(const T v1, const T v2) {
-	if (util_equal(v1, v2)) {
-		return false;
-	}
+  if (util_equal(v1, v2)) {
+    return false;
+  }
 
-	return v1 < v2;
+  return v1 < v2;
 }
 
 template<typename T>
 inline bool util_less_equal(const T v1, const T v2) {
-	if (util_equal(v1, v2)) {
-		return true;
-	}
+  if (util_equal(v1, v2)) {
+    return true;
+  }
 
-	return v1 < v2;
+  return v1 < v2;
 }
 
 template<typename T>
 inline T safe_exp(T x) {
-	T max_exp = static_cast<T>(MAX_EXP_NUM);
-	return std::exp(std::max(std::min(x, max_exp), -max_exp));
+  T max_exp = static_cast<T>(MAX_EXP_NUM);
+  return std::exp(std::max(std::min(x, max_exp), -max_exp));
 }
 
 template<typename T>
 inline T sigmoid(T x) {
-	T one = 1.;
-	return one / (one + safe_exp(-x));
+  T one = 1.;
+  return one / (one + safe_exp(-x));
 }
 
 #endif // SRC_UTIL_H
