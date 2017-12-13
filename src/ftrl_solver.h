@@ -251,7 +251,8 @@ T FtrlSolver<T>::Update(const std::vector<std::pair<size_t, T> >& x, T y) {
     T grad_i = gradients[k];
     T sigma = (sqrt(GetN(i) + grad_i * grad_i) - sqrt(GetN(i))) / alpha_;
     GetZ4W(i) += grad_i - sigma * w_i;
-    GetN4W(i) += grad_i * grad_i; }
+    GetN4W(i) += grad_i * grad_i; 
+  }
 
   return pred;
 }

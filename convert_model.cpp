@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
     cout << argv[0] << " input_model output_binary" << endl;
     return 0;
   }
-
+  const size_t kB_ID = 0;
   float b = 0;
   std::unordered_map<int32_t, float> w;
   // read
@@ -28,8 +28,13 @@ int main(int argc, char** argv) {
       return -1;
     }
     if (fabs(weight) > 1e-7) {
+     if (idx == kB_ID) {
+       b = weight;
+     } else {
       w[idx] = weight;
+     }
       cout << idx << ":" << weight << endl;
+     
     }
   }
   fin.close();
