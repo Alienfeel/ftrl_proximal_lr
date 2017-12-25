@@ -55,7 +55,7 @@ public:
     size_t n,
     T dropout = 0);
 
-  virtual bool Initialize(const char* path);
+  virtual bool Initialize(const char* path, double l3 = 0);
 
   virtual T Update(const std::vector<std::pair<size_t, T> >& x, T y);
   virtual T Predict(const std::vector<std::pair<size_t, T> >& x);
@@ -87,20 +87,32 @@ public:
   T& GetZ4W(size_t idx) {
     return z_[idx];
   }
+
+  bool IsL3RegularizedEnabled() const {
+  return !lastw_.empty();
+  }
+
 protected:
   enum {kPrecision = 8};
 
 protected:
   T GetWeight(size_t idx);
- 
+  T GetWeight0(size_t idx) const {
+	auto cit = lastw_.find(idx);
+	return cit == lastw_.end() ? 0 : cit->second;
+  }
+  void LoadLastWeight(); 
+
 protected:
   T alpha_;
   T beta_;
   T l1_;
   T l2_;
+  double l3_;
   size_t feat_num_;
   T dropout_;
-  
+
+  std::unordered_map<size_t, T> lastw_; 
   std::unordered_map<size_t, T> n_;
   std::unordered_map<size_t, T> z_;
   //T * n_;
@@ -151,7 +163,7 @@ bool FtrlSolver<T>::Initialize(
 }
 
 template<typename T>
-bool FtrlSolver<T>::Initialize(const char* path) {
+bool FtrlSolver<T>::Initialize(const char* path, double l3) {
   std::fstream fin;
   fin.open(path, std::ios::in);
   if (!fin.is_open()) {
@@ -188,7 +200,19 @@ bool FtrlSolver<T>::Initialize(const char* path) {
 
   fin.close();
   init_ = true;
+  l3_ = l3;
+  if (l3_ > std::numeric_limits<double>::epsilon()) {
+    LoadLastWeight();
+  }
   return init_;
+}
+
+template<typename T>
+void FtrlSolver<T>::LoadLastWeight() {
+  for (const auto& kv : n_) {
+    auto feaid = kv.first;
+    lastw_[feaid] = GetWeight(feaid);
+  }
 }
 
 template<typename T>
@@ -200,14 +224,15 @@ T FtrlSolver<T>::GetWeight(size_t idx) {
   T sign = 1.;
   T val = 0.;
   auto z = GetZ(idx);
-  if (z < 0) {
+  auto z_hat = z - l3_ * GetWeight0(idx);
+  if (z_hat < 0) {
     sign = -1.;
   }
 
-  if (util_less_equal(sign * z, l1_)) {
+  if (util_less_equal(T(sign * z_hat), l1_)) {
     val = 0.;
   } else {
-    val = (sign * l1_ - z) / ((beta_ + sqrt(GetN(idx))) / alpha_ + l2_);
+    val = (sign * l1_ - z_hat) / ((beta_ + sqrt(GetN(idx))) / alpha_ + l2_ + l3_);
   }
 
   return val;

@@ -76,7 +76,8 @@ public:
     const char* last_model,
     const char* model_file,
     const char* train_file,
-    const char* test_file = NULL);
+    const char* test_file = NULL,
+	double l3 = 0);
 
 protected:
   bool TrainImpl(
@@ -247,7 +248,8 @@ bool FtrlTrainer<T>::Train(
     const char* last_model,
     const char* model_file,
     const char* train_file,
-    const char* test_file) {
+    const char* test_file,
+	double l3) {
   if (!init_) return false;
     if (strcmp(train_file, "stdin") == 0) {
         read_stdin_ = true;
@@ -261,7 +263,7 @@ bool FtrlTrainer<T>::Train(
     if (feat_num == 0) return false;
   }
 
-  if (!solver_.Initialize(last_model)) {
+  if (!solver_.Initialize(last_model, l3)) {
     return false;
   }
 
