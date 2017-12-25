@@ -101,8 +101,8 @@ protected:
   size_t feat_num_;
   T dropout_;
   
-  std::unordered_map<int32_t, T> n_;
-  std::unordered_map<int32_t, T> z_;
+  std::unordered_map<size_t, T> n_;
+  std::unordered_map<size_t, T> z_;
   //T * n_;
   //T * z_;
 

@@ -38,7 +38,7 @@ inline size_t calc_group_num(size_t n) {
 template<typename T>
 class FtrlParamServer : public FtrlSolver<T> {
 public:
-  typedef std::unordered_map<int32_t, T> ParamMap; 
+  typedef std::unordered_map<size_t, T> ParamMap; 
   FtrlParamServer();
 
   virtual ~FtrlParamServer();
@@ -67,7 +67,7 @@ private:
 template<typename T>
 class FtrlWorker : public FtrlSolver<T> {
 public:
-  typedef std::unordered_map<int32_t, T> ParamMap;
+  typedef std::unordered_map<size_t, T> ParamMap;
   FtrlWorker();
 
   virtual ~FtrlWorker();
