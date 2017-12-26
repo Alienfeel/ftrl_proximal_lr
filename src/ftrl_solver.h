@@ -55,7 +55,7 @@ public:
     size_t n,
     T dropout = 0);
 
-  virtual bool Initialize(const char* path, double l3 = 0);
+  virtual bool Initialize(const char* path, T l3 = 0);
 
   virtual T Update(const std::vector<std::pair<size_t, T> >& x, T y);
   virtual T Predict(const std::vector<std::pair<size_t, T> >& x);
@@ -108,7 +108,7 @@ protected:
   T beta_;
   T l1_;
   T l2_;
-  double l3_;
+  T l3_;
   size_t feat_num_;
   T dropout_;
 
@@ -200,10 +200,11 @@ bool FtrlSolver<T>::Initialize(const char* path, double l3) {
 
   fin.close();
   init_ = true;
-  l3_ = l3;
-  if (l3_ > std::numeric_limits<double>::epsilon()) {
+  
+  if (l3 > std::numeric_limits<T>::epsilon()) {
     LoadLastWeight();
   }
+	l3_ = l3;
   return init_;
 }
 
