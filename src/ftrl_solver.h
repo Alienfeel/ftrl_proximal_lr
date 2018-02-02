@@ -163,14 +163,14 @@ bool FtrlSolver<T>::Initialize(
 }
 
 template<typename T>
-bool FtrlSolver<T>::Initialize(const char* path, double l3) {
+bool FtrlSolver<T>::Initialize(const char* path, T l3) {
   std::fstream fin;
   fin.open(path, std::ios::in);
   if (!fin.is_open()) {
     return false;
   }
 
-  fin >> alpha_ >> beta_ >> l1_ >> l2_ >> feat_num_ >> dropout_;
+  fin >> alpha_ >> beta_ >> l1_ >> l2_ >> feat_num_ >> dropout_ >> l3_;
   if (!fin || fin.eof()) {
     fin.close();
     return false;
@@ -201,10 +201,10 @@ bool FtrlSolver<T>::Initialize(const char* path, double l3) {
   fin.close();
   init_ = true;
   
-  if (l3 > std::numeric_limits<T>::epsilon()) {
+  if (std::max(l3, l3_) > std::numeric_limits<T>::epsilon()) {
     LoadLastWeight();
   }
-	l3_ = l3;
+  l3_ = std::max(l3, l3_);
   return init_;
 }
 
@@ -349,7 +349,8 @@ bool FtrlSolver<T>::SaveModelDetail(const char* path) {
 
   fout << std::fixed << std::setprecision(kPrecision);
   fout << alpha_ << "\t" << beta_ << "\t" << l1_ << "\t"
-    << l2_ << "\t" << feat_num_ << "\t" << dropout_ << "\n";
+    << l2_ << "\t" << feat_num_ << "\t" << dropout_ <<  "\t" << l3_ 
+    << "\n";
   // total size
   fout << n_.size() << "\n";
   for (const auto& kv : n_) {
